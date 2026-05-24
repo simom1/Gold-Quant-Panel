@@ -164,6 +164,9 @@
       <button onclick="switchTab('sandbox')" id="tab-sandbox" class="pb-3 px-4 text-sm md:text-base font-semibold text-slate-400 hover:text-white transition duration-200 focus:outline-none whitespace-nowrap active-tab">
         🔮 相似沙盘与自适应风控
       </button>
+      <button onclick="switchTab('clustering')" id="tab-clustering" class="pb-3 px-4 text-sm md:text-base font-semibold text-slate-400 hover:text-white transition duration-200 focus:outline-none whitespace-nowrap">
+        📊 周期特征与分类聚类
+      </button>
       <button onclick="switchTab('patterns')" id="tab-patterns" class="pb-3 px-4 text-sm md:text-base font-semibold text-slate-400 hover:text-white transition duration-200 focus:outline-none whitespace-nowrap">
         📐 经典技术图形扫描
       </button>
@@ -224,7 +227,7 @@
             </p>
           </div>
         </div>
-        
+
         <!-- Matching Sidebar & Risk Position Card -->
         <div class="space-y-6">
           <!-- Sidebar Matches List -->
@@ -275,11 +278,56 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 100% Vector Driven Dynamic Canvas. No static images needed. -->
     </div>
     
-    <!-- Tab 2 removed for 100% vector-driven simplification -->
+    <!-- TAB 2: CLUSTERING (Local Full Version) -->
+    <div id="tab-content-clustering" class="space-y-6 hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Elbow Curve -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 shadow-xl space-y-4">
+          <h3 class="text-lg font-bold font-display text-white border-b border-slate-800 pb-2">📈 K-Means 聚类惯性手肘曲线 (Elbow Curve)</h3>
+          <div id="cluster-elbow-chart" class="w-full min-h-[260px] rounded-xl border border-slate-900 shadow-md bg-slate-950/70 overflow-hidden"></div>
+          <div class="text-xs text-slate-400 leading-relaxed bg-slate-950/40 p-3 rounded-lg border border-slate-900">
+            <span class="font-bold text-amber-500 block mb-1">手肘曲线与质心解释:</span>
+            在无监督机器学习中，惯性得分随聚类数增加而递减。选择斜率明显平缓的拐点（手肘）作为最佳 K 值，本系统统一选用 <strong>K=3</strong> 具有最优的分类效率与稳定性。
+          </div>
+        </div>
+
+        <!-- Global & State-conditioned overlays -->
+        <div class="lg:col-span-2 glass-card rounded-2xl p-6 border border-slate-800 shadow-xl space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-3">
+              <h4 class="text-sm font-bold font-display text-slate-300 border-b border-slate-800 pb-1">🌐 全局历史走势分类 (Global K=3)</h4>
+              <div id="cluster-global-chart" class="w-full min-h-[260px] rounded-xl border border-slate-900 shadow-md bg-slate-950/70 overflow-hidden"></div>
+            </div>
+            <div class="space-y-3">
+              <h4 class="text-sm font-bold font-display text-slate-300 border-b border-slate-800 pb-1">🎯 状态条件特征分类 (State-conditioned K=3)</h4>
+              <div id="cluster-state-chart" class="w-full min-h-[260px] rounded-xl border border-slate-900 shadow-md bg-slate-950/70 overflow-hidden"></div>
+            </div>
+          </div>
+          <div class="bg-cyan-500/5 border border-cyan-500/10 rounded-xl p-4 text-xs text-slate-400 leading-relaxed">
+            <span class="font-bold text-cyan-400 block mb-1">💡 跟着页面走 - 聚类分类解读小贴士:</span>
+            <p><strong>全局分类:</strong> 代表不考虑当前市场状态时，黄金全周期历史中最常出现的 3 种基础波形走势。<br>
+            <strong>状态条件分类:</strong> 仅筛选出历史上与当前<strong>动态市场特征一致</strong>的片段，再次聚类为 3 类，过滤无关历史背景。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cluster details (JSON-driven stat cards, no PNG needed) -->
+      <div class="space-y-4">
+        <h4 class="text-md font-bold font-display text-slate-300 uppercase tracking-widest">🧬 K=3 聚类质心分类群组详情</h4>
+        <div class="space-y-3">
+          <h5 class="text-xs text-slate-400 font-bold uppercase tracking-wider pl-1">🌐 全局分类质心 (Global Clusters)</h5>
+          <div id="global-clusters-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+        </div>
+        <div class="space-y-3 pt-2">
+          <h5 class="text-xs text-slate-400 font-bold uppercase tracking-wider pl-1">🎯 状态条件分类质心 (State-Conditioned Clusters)</h5>
+          <div id="state-clusters-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+        </div>
+      </div>
+    </div>
     
     <!-- TAB 3: CLASSIC PATTERNS -->
     <div id="tab-content-patterns" class="space-y-6 hidden">
@@ -476,6 +524,16 @@
       '1d': '日线 (D1)'
     };
 
+    const CLUSTERING_QUALITY = [
+      { k: 2, inertia: 157985372.52, explained_variance: 0.4351, silhouette_score: 0.3621 },
+      { k: 3, inertia: 114824258.77, explained_variance: 0.5894, silhouette_score: 0.3387 },
+      { k: 4, inertia: 97516684.23, explained_variance: 0.6513, silhouette_score: 0.2648 },
+      { k: 5, inertia: 87109790.59, explained_variance: 0.6885, silhouette_score: 0.2416 },
+      { k: 6, inertia: 79054398.70, explained_variance: 0.7173, silhouette_score: 0.2365 },
+      { k: 7, inertia: 73821571.92, explained_variance: 0.7360, silhouette_score: 0.1913 },
+      { k: 8, inertia: 70185965.08, explained_variance: 0.7490, silhouette_score: 0.1842 }
+    ];
+
     // Switch timeframe
     function switchTimeframe(tf) {
       // Update UI active buttons
@@ -519,13 +577,14 @@
       
       // Re-populate and render tab components (100% Vector Render)
       renderSandbox();
+      populateClustering();
       populatePatternSidebar();
       renderSelectedPattern();
     }
 
     // Switch major content tab
     function switchTab(tab) {
-      const tabs = ['sandbox', 'patterns', 'academic'];
+      const tabs = ['sandbox', 'clustering', 'patterns', 'academic'];
       tabs.forEach(t => {
         const btn = document.getElementById(`tab-${t}`);
         const block = document.getElementById(`tab-content-${t}`);
@@ -538,6 +597,168 @@
         }
       });
       currentTab = tab;
+    }
+
+    function fmtPct(value, digits = 1) {
+      return `${Number(value || 0).toFixed(digits)}%`;
+    }
+
+    function fmtSigned(value, digits = 2) {
+      const n = Number(value || 0);
+      return `${n >= 0 ? '+' : ''}${n.toFixed(digits)}%`;
+    }
+
+    function renderClusterQualityChart() {
+      const el = document.getElementById("cluster-elbow-chart");
+      if (!el) return;
+
+      const data = CLUSTERING_QUALITY;
+      const w = 460;
+      const h = 260;
+      const pad = 42;
+      const minK = Math.min(...data.map(d => d.k));
+      const maxK = Math.max(...data.map(d => d.k));
+      const minI = Math.min(...data.map(d => d.inertia));
+      const maxI = Math.max(...data.map(d => d.inertia));
+      const x = k => pad + ((k - minK) / (maxK - minK)) * (w - pad * 2);
+      const yI = v => pad + ((maxI - v) / (maxI - minI)) * (h - pad * 2);
+      const yS = v => pad + ((0.40 - v) / 0.24) * (h - pad * 2);
+      const inertiaPath = data.map((d, i) => `${i ? 'L' : 'M'} ${x(d.k).toFixed(1)} ${yI(d.inertia).toFixed(1)}`).join(' ');
+      const silhouettePath = data.map((d, i) => `${i ? 'L' : 'M'} ${x(d.k).toFixed(1)} ${yS(d.silhouette_score).toFixed(1)}`).join(' ');
+      const best = data.find(d => d.k === 3);
+
+      el.innerHTML = `
+        <svg class="w-full h-full min-h-[260px]" viewBox="0 0 ${w} ${h}" role="img" aria-label="K-Means elbow curve">
+          <rect width="${w}" height="${h}" fill="#020617"/>
+          <g stroke="#1e293b" stroke-width="1">
+            ${[0,1,2,3].map(i => `<line x1="${pad}" y1="${pad + i * 48}" x2="${w - pad}" y2="${pad + i * 48}"/>`).join('')}
+          </g>
+          <line x1="${x(3)}" y1="${pad - 8}" x2="${x(3)}" y2="${h - pad + 8}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 5"/>
+          <path d="${inertiaPath}" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="${silhouettePath}" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+          ${data.map(d => `
+            <g>
+              <circle cx="${x(d.k)}" cy="${yI(d.inertia)}" r="${d.k === 3 ? 5 : 3.5}" fill="${d.k === 3 ? '#fbbf24' : '#f59e0b'}"/>
+              <circle cx="${x(d.k)}" cy="${yS(d.silhouette_score)}" r="3" fill="#22d3ee"/>
+              <text x="${x(d.k)}" y="${h - 18}" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="monospace">K=${d.k}</text>
+            </g>
+          `).join('')}
+          <text x="${pad}" y="24" font-size="12" font-weight="700" fill="#f8fafc">Elbow Method / Silhouette</text>
+          <text x="${pad}" y="${h - 8}" font-size="10" fill="#64748b">橙色: 惯性下降曲线   青色: 轮廓系数</text>
+          <g transform="translate(${x(3) + 10}, ${pad + 10})">
+            <rect width="142" height="54" rx="8" fill="rgba(15,23,42,0.9)" stroke="rgba(245,158,11,0.45)"/>
+            <text x="12" y="20" font-size="11" fill="#fbbf24" font-weight="700">最佳发布 K=3</text>
+            <text x="12" y="38" font-size="10" fill="#cbd5e1">解释方差 ${(best.explained_variance * 100).toFixed(1)}%</text>
+          </g>
+        </svg>
+      `;
+    }
+
+    function renderClusterSummaryChart(containerId, clusters, accent, label) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      if (!clusters || clusters.length === 0) {
+        el.innerHTML = `<div class="p-6 text-center text-xs text-slate-500 italic">当前周期样本不足，暂无可视化聚类结果。</div>`;
+        return;
+      }
+
+      const w = 520;
+      const rowH = 68;
+      const h = 40 + clusters.length * rowH;
+      const maxFreq = Math.max(...clusters.map(c => c.frequency_pct), 1);
+      const maxAbsRet = Math.max(...clusters.map(c => Math.abs(c.median_return)), 0.1);
+      const colors = accent === 'cyan'
+        ? { main: '#22d3ee', soft: 'rgba(34,211,238,0.16)', text: '#67e8f9' }
+        : { main: '#f59e0b', soft: 'rgba(245,158,11,0.16)', text: '#fbbf24' };
+
+      el.innerHTML = `
+        <svg class="w-full h-full min-h-[260px]" viewBox="0 0 ${w} ${h}" role="img" aria-label="${label}">
+          <rect width="${w}" height="${h}" fill="#020617"/>
+          <text x="24" y="25" font-size="12" font-weight="700" fill="#f8fafc">${label}</text>
+          <text x="360" y="25" font-size="10" fill="#64748b">Freq / Win / Median</text>
+          ${clusters.map((c, i) => {
+            const y = 44 + i * rowH;
+            const freqW = 210 * (c.frequency_pct / maxFreq);
+            const winW = 150 * (c.win_rate / 100);
+            const zeroX = 380;
+            const retX = zeroX + (c.median_return / maxAbsRet) * 78;
+            const retColor = c.median_return >= 0 ? '#22c55e' : '#ef4444';
+            return `
+              <g transform="translate(0, ${y})">
+                <text x="24" y="16" font-size="11" font-weight="700" fill="${colors.text}">${accent === 'cyan' ? 'STATE ' : ''}CLUSTER ${c.cluster_id}</text>
+                <rect x="24" y="25" width="210" height="10" rx="5" fill="#0f172a"/>
+                <rect x="24" y="25" width="${freqW.toFixed(1)}" height="10" rx="5" fill="${colors.main}"/>
+                <text x="244" y="34" font-size="10" fill="#cbd5e1">${fmtPct(c.frequency_pct)} 频率</text>
+                <rect x="24" y="43" width="150" height="8" rx="4" fill="#0f172a"/>
+                <rect x="24" y="43" width="${winW.toFixed(1)}" height="8" rx="4" fill="#22c55e" opacity="0.85"/>
+                <text x="184" y="51" font-size="10" fill="#94a3b8">${fmtPct(c.win_rate)} 胜率</text>
+                <line x1="${zeroX}" y1="29" x2="${zeroX}" y2="55" stroke="#334155" stroke-width="1"/>
+                <line x1="${zeroX - 78}" y1="42" x2="${zeroX + 78}" y2="42" stroke="#1e293b" stroke-width="1"/>
+                <circle cx="${retX.toFixed(1)}" cy="42" r="5" fill="${retColor}"/>
+                <text x="${zeroX + 92}" y="46" font-size="10" fill="${retColor}" font-weight="700">${fmtSigned(c.median_return)}</text>
+              </g>
+            `;
+          }).join('')}
+        </svg>
+      `;
+    }
+
+    // Clustering functions restored for local full version
+    function populateClustering() {
+      const meta = PIPELINE_METADATA[currentTimeframe];
+      if (!meta) return;
+
+      renderClusterQualityChart();
+      renderClusterSummaryChart("cluster-global-chart", meta.global_clusters, "amber", `Global K=3 | ${TF_LABELS[currentTimeframe]}`);
+      renderClusterSummaryChart("cluster-state-chart", meta.state_clusters, "cyan", `State-conditioned K=3 | ${meta.state_meta.current_state}`);
+
+      const globalGrid = document.getElementById("global-clusters-grid");
+      if (globalGrid && meta.global_clusters) {
+        globalGrid.innerHTML = meta.global_clusters.map(c => `
+          <div class="glass-card p-4 rounded-xl border border-slate-800/80 shadow-lg space-y-2.5">
+            <div class="flex items-center justify-between border-b border-slate-900 pb-1.5">
+              <span class="text-xs font-mono font-bold text-amber-500">CLUSTER ${c.cluster_id}</span>
+              <span class="px-2 py-0.5 text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full font-mono">${c.frequency_pct.toFixed(1)}% Freq</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="text-slate-500 block text-[9px] uppercase font-semibold">历史胜率</span>
+                <span class="font-bold text-green-400">${c.win_rate.toFixed(1)}%</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block text-[9px] uppercase font-semibold">中位数收益</span>
+                <span class="font-bold text-amber-400">${c.median_return.toFixed(2)}%</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const stateGrid = document.getElementById("state-clusters-grid");
+      if (stateGrid) {
+        if (meta.state_clusters && meta.state_clusters.length > 0) {
+          stateGrid.innerHTML = meta.state_clusters.map(c => `
+            <div class="glass-card p-4 rounded-xl border border-slate-800/80 shadow-lg space-y-2.5">
+              <div class="flex items-center justify-between border-b border-slate-900 pb-1.5">
+                <span class="text-xs font-mono font-bold text-cyan-400">STATE CLUSTER ${c.cluster_id}</span>
+                <span class="px-2 py-0.5 text-[10px] bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-full font-mono">${c.frequency_pct.toFixed(1)}% Freq</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span class="text-slate-500 block text-[9px] uppercase font-semibold">历史胜率</span>
+                  <span class="font-bold text-green-400">${c.win_rate.toFixed(1)}%</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block text-[9px] uppercase font-semibold">中位数收益</span>
+                  <span class="font-bold text-amber-400">${c.median_return.toFixed(2)}%</span>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          stateGrid.innerHTML = `<div class="col-span-3 text-center p-6 text-slate-500 text-xs italic">当前状态下历史样本数不足，跳过状态质心计算。</div>`;
+        }
+      }
     }
 
     // Render Sandbox SVG
@@ -1117,6 +1338,15 @@
       confirmLabel.textContent = "Breakout 突破确认点";
       svg.appendChild(confirmLabel);
     }
+
+    Object.assign(window, {
+      switchTimeframe,
+      switchTab,
+      toggleForwardLine,
+      selectMatch,
+      selectPattern,
+      selectPatternRecent
+    });
 
     // Initialization
     window.onload = function() {
